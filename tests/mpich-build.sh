@@ -17,11 +17,9 @@ else
 fi
 
 if [ ! -f configure ]; then
-    # autogen.sh requires confdb in CWD before it will proceed;
-    # symlink to the repo-level confdb so autoreconf can find macros
-    [ -d confdb ] || ln -sf ../../confdb confdb
-    [ -d dtpools/confdb ] || ln -sf ../../confdb dtpools/confdb 2>/dev/null
-    [ -f version.m4 ] || ln -sf ../../maint/version.m4 version.m4 2>/dev/null
+    # Point autogen.sh at the repo-level confdb so it skips the
+    # "Missing confdb!" gate and handles all copies internally
+    export MPICH_CONFDB="$(cd ../../confdb && pwd)"
 
     sh autogen.sh || exit 1
 fi
