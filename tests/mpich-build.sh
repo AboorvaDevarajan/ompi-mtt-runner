@@ -1,10 +1,20 @@
 #!/bin/sh
 # Build MPICH test suite from the full MPICH repo checkout.
-# Called by MTT Shell plugin from the MPICH repo root.
+# MTT runs this from the TestGet directory; the clone is in mpich/.
 
 JOBS="${1:-4}"
 
-cd test/mpi || exit 1
+# Find the mpich source tree
+if [ -d mpich/test/mpi ]; then
+    cd mpich/test/mpi
+elif [ -d test/mpi ]; then
+    cd test/mpi
+else
+    echo "Cannot find MPICH test/mpi directory" >&2
+    echo "PWD=$(pwd)" >&2
+    ls -la >&2
+    exit 1
+fi
 
 if [ ! -f configure ]; then
     sh autogen.sh || exit 1
