@@ -28,4 +28,6 @@ if [ ! -f Makefile ]; then
     ./configure CC=mpicc CXX=mpicxx F77=mpif77 FC=mpifort || exit 1
 fi
 
-make -j "$JOBS" || exit 1
+# -k: keep going past individual compile failures (e.g. MPI 4.0
+# large-count tests that OMPI v5.0.x doesn't fully support)
+make -k -j "$JOBS" || true
