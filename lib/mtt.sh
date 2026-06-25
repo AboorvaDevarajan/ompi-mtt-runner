@@ -60,7 +60,7 @@ expand_template() {
         -e "s|@HOSTFILE@|${HOSTFILE}|g" \
         "${template}" \
     | if [[ -z "${HOSTFILE}" ]]; then
-        grep -v '^hostfile[[:space:]]*=$'
+        grep -v '^hostfile[[:space:]]*=[[:space:]]*$'
       else
         cat
       fi
