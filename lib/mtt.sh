@@ -57,7 +57,13 @@ expand_template() {
         -e "s|@LOGS_DIR@|${LOGS_DIR}|g" \
         -e "s|@RUNNER_DIR@|${RUNNER_DIR}|g" \
         -e "s|@TESTS_DIR@|${TESTS_DIR}|g" \
-        "${template}"
+        -e "s|@HOSTFILE@|${HOSTFILE}|g" \
+        "${template}" \
+    | if [[ -z "${HOSTFILE}" ]]; then
+        grep -v '^hostfile[[:space:]]*=$'
+      else
+        cat
+      fi
 }
 
 append_suite() {

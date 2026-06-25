@@ -9,6 +9,7 @@
 #   --branch BRANCH    Open MPI branch to test (default: v5.0.x)
 #   --np N             Number of MPI processes (default: 2)
 #   --jobs N           Parallel make jobs (default: nproc)
+#   --hostfile FILE    MPI hostfile for multi-node runs
 #   --mtt-home DIR     Path to MTT clone (default: ~/src/mtt)
 #   --rebuild          Force MTT to redo all ASIS phases
 #   --clean            Clean MTT scratch directory before run
@@ -47,6 +48,7 @@ parse_args() {
             --branch)    BRANCH="${2:?--branch requires a value}"; shift 2 ;;
             --np)        NP="${2:?--np requires a value}"; shift 2 ;;
             --jobs)      JOBS="${2:?--jobs requires a value}"; shift 2 ;;
+            --hostfile)  HOSTFILE="${2:?--hostfile requires a value}"; shift 2 ;;
             --mtt-home)  MTT_HOME="${2:?--mtt-home requires a value}"; shift 2 ;;
             --rebuild)   DO_REBUILD=true; shift ;;
             --clean)     DO_CLEAN=true; shift ;;
