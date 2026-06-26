@@ -43,7 +43,12 @@ generate_mtt_ini() {
 
 expand_template() {
     local template="$1"
+    local trial="true"
+    if [[ "${DO_SUBMIT}" == "true" ]]; then
+        trial="false"
+    fi
     sed \
+        -e "s|@TRIAL@|${trial}|g" \
         -e "s|@PREFIX@|${PREFIX}|g" \
         -e "s|@OMPI_SRC@|${OMPI_SRC}|g" \
         -e "s|@SCRATCH@|${SCRATCH_DIR}|g" \
