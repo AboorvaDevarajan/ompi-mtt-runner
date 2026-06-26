@@ -59,6 +59,12 @@ console output and CI-friendly exit codes.
 
 # Show full MTT output on console
 ./run-mtt.sh --suite smoke --verbose
+
+# Submit results to mtt.open-mpi.org
+./run-mtt.sh --suite smoke --submit --mtt-user YOUR_USER --mtt-pass YOUR_PASS
+
+# Custom platform identifier (default: uname -m)
+./run-mtt.sh --suite smoke --submit --mtt-user YOU --mtt-pass PASS --platform power9
 ```
 
 ### Hostfile format
@@ -101,7 +107,7 @@ run-mtt.sh
     │                             TestGet         (clone/copy test sources)
     │                             TestBuild       (compile against OMPI)
     │                             TestRun         (mpirun tests)
-    │                             Reporter        (TextFile + JUnit XML)
+    │                             Reporter        (TextFile + JUnit XML [+ IUDatabase])
     └── 6. Present clean summary + return exit code
 ```
 
@@ -118,6 +124,10 @@ run-mtt.sh
 | `--clean` | Wipe MTT scratch, rebuild everything | |
 | `--verbose` | Show full MTT output on console | |
 | `--junit` | Produce JUnit XML in `results/` | |
+| `--submit` | Submit results to [mtt.open-mpi.org](https://mtt.open-mpi.org/) | |
+| `--mtt-user USER` | MTT database username (required with `--submit`) | |
+| `--mtt-pass PASS` | MTT database password (required with `--submit`) | |
+| `--platform NAME` | Platform identifier for upstream reports | `uname -m` |
 
 ## Test suites
 
@@ -230,6 +240,23 @@ The runner clones [open-mpi/mtt](https://github.com/open-mpi/mtt) into
 | ASIS uses stale cache | Delete specific `work/scratch/TestGet_*` dir |
 | Test needs more ranks | Increase `--np` (e.g., `--np 4`) |
 | Test hangs | Per-test timeout in INI handles this automatically |
+
+## Upstream reporting
+
+Results can be submitted to the [Open MPI Test Reporter](https://mtt.open-mpi.org/)
+database using the `--submit` flag. This uses MTT's `IUDatabase` reporter plugin.
+
+```bash
+./run-mtt.sh --suite smoke --submit --mtt-user YOUR_USER --mtt-pass YOUR_PASS
+```
+
+To get credentials, subscribe to the
+[MTT developer mailing list](https://lists.open-mpi.org/mailman/listinfo/mtt-devel)
+(mtt-devel@open-mpi.org) and request access. See the
+[MTT community page](https://open-mpi.github.io/mtt/pages/community.html) for details.
+
+Without `--submit`, all reports stay local (`results/summary.txt`, `results/junit.xml`).
+No data is sent anywhere by default.
 
 ## Future extensions
 

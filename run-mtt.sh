@@ -15,6 +15,10 @@
 #   --clean            Clean MTT scratch directory before run
 #   --verbose          Show MTT output on console
 #   --junit            Produce JUnit XML in results/
+#   --submit           Submit results to mtt.open-mpi.org
+#   --mtt-user USER    MTT database username (required with --submit)
+#   --mtt-pass PASS    MTT database password (required with --submit)
+#   --platform NAME    Platform identifier (default: uname -m, e.g. ppc64le)
 #   --help             Show this help message
 #
 # Exit codes:
@@ -54,6 +58,10 @@ parse_args() {
             --clean)     DO_CLEAN=true; shift ;;
             --verbose)   VERBOSE=true; shift ;;
             --junit)     DO_JUNIT=true; shift ;;
+            --submit)    DO_SUBMIT=true; shift ;;
+            --mtt-user)  MTT_USER="${2:?--mtt-user requires a value}"; shift 2 ;;
+            --mtt-pass)  MTT_PASS="${2:?--mtt-pass requires a value}"; shift 2 ;;
+            --platform)  PLATFORM="${2:?--platform requires a value}"; shift 2 ;;
             --help|-h)   usage ;;
             *)           die ${EXIT_CONFIG_ERROR} "Unknown option: $1" ;;
         esac
@@ -66,6 +74,14 @@ main() {
     run_start=$(date +%s)
 
     parse_args "$@"
+
+    if [[ "${DO_SUBMIT}" == "true" ]]; then
+        if [[ -z "${MTT_USER}" || -z "${MTT_PASS}" ]]; then
+            echo "ERROR: --submit requires --mtt-user and --mtt-pass" >&2
+            exit ${EXIT_CONFIG_ERROR}
+        fi
+    fi
+
     ensure_dirs
     log_init
 

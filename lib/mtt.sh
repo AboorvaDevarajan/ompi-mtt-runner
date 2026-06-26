@@ -58,9 +58,17 @@ expand_template() {
         -e "s|@RUNNER_DIR@|${RUNNER_DIR}|g" \
         -e "s|@TESTS_DIR@|${TESTS_DIR}|g" \
         -e "s|@HOSTFILE@|${HOSTFILE}|g" \
+        -e "s|@MTT_USER@|${MTT_USER}|g" \
+        -e "s|@MTT_PASS@|${MTT_PASS}|g" \
+        -e "s|@PLATFORM@|${PLATFORM}|g" \
         "${template}" \
     | if [[ -z "${HOSTFILE}" ]]; then
         grep -v '^hostfile[[:space:]]*=[[:space:]]*$'
+      else
+        cat
+      fi \
+    | if [[ "${DO_SUBMIT}" != "true" ]]; then
+        sed '/^\[Reporter:IUDatabase\]/,/^$/d'
       else
         cat
       fi

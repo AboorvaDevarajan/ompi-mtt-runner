@@ -48,6 +48,10 @@ DO_REBUILD=false
 DO_CLEAN=false
 VERBOSE=false
 DO_JUNIT=false
+DO_SUBMIT=false
+MTT_USER=""
+MTT_PASS=""
+PLATFORM="$(uname -m)"
 
 ensure_dirs() {
     mkdir -p "${RESULTS_DIR}" "${LOGS_DIR}" "${WORK_DIR}" "${SCRATCH_DIR}"
