@@ -36,6 +36,11 @@ VENV_DIR="${DEFAULT_VENV_DIR}"
 HOSTFILE=""
 DO_CLEAN=false
 VERBOSE=false
+DO_SUBMIT=false
+MTT_USER="${MTT_USER:-}"
+MTT_PASS="${MTT_PASS:-}"
+PLATFORM="$(uname -m)"
+SUBMIT_HOSTNAME="$(hostname)"
 
 ensure_dirs() {
     mkdir -p "${RESULTS_DIR}" "${LOGS_DIR}" "${WORK_DIR}" "${SCRATCH_DIR}"

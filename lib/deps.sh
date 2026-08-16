@@ -56,18 +56,48 @@ ensure_mtt() {
     return 0
 }
 
+# Yapsy 1.12 (what pip installs) still imports the removed `imp`
+# module, so MTT needs Python < 3.12.
+select_python() {
+    local candidate
+    for candidate in python3.11 python3.10 python3; do
+        if command -v "${candidate}" &>/dev/null; then
+            if "${candidate}" -c 'import sys; raise SystemExit(0 if sys.version_info < (3, 12) else 1)' 2>/dev/null; then
+                echo "${candidate}"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
 ensure_venv() {
+    local py
+    py=$(select_python) || {
+        log_raw "MTT requires Python 3.10 or 3.11 (Yapsy is broken on 3.12+)"
+        return 1
+    }
+
+    if [[ -x "${VENV_DIR}/bin/python" ]]; then
+        if ! "${VENV_DIR}/bin/python" -c 'import sys; raise SystemExit(0 if sys.version_info < (3, 12) else 1)' 2>/dev/null; then
+            log_verbose "Recreating venv with ${py} (existing venv is Python 3.12+)"
+            rm -rf "${VENV_DIR}"
+        fi
+    fi
+
     if [[ ! -d "${VENV_DIR}" ]]; then
-        log_verbose "Creating Python virtual environment at ${VENV_DIR}"
-        python3 -m venv "${VENV_DIR}"
+        log_verbose "Creating Python virtual environment with ${py} at ${VENV_DIR}"
+        "${py}" -m venv "${VENV_DIR}"
     fi
     # shellcheck disable=SC1091
     source "${VENV_DIR}/bin/activate"
-    log_raw "Activated venv: ${VENV_DIR}"
+    log_raw "Activated venv: ${VENV_DIR} ($("${VENV_DIR}/bin/python" --version))"
 }
 
 check_python_deps() {
-    ensure_venv
+    if ! ensure_venv; then
+        return 1
+    fi
 
     local missing=()
     for pkg in "${REQUIRED_PYTHON_PKGS[@]}"; do

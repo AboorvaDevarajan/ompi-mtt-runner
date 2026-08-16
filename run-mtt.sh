@@ -5,7 +5,7 @@
 #   ./run-mtt.sh [OPTIONS]
 #
 # Options:
-#   --suite SUITE      Test suite: smoke, ompi, mpich, all (default: smoke)
+#   --suite SUITE      Test suite: smoke, ompi, mpich, intel, all (default: smoke)
 #   --branch BRANCH    Open MPI branch to test (default: v5.0.x)
 #   --np N             Number of MPI processes (default: 2)
 #   --jobs N           Parallel make jobs (default: nproc)
@@ -13,6 +13,11 @@
 #   --mtt-home DIR     Path to MTT clone (default: ~/src/mtt)
 #   --clean            Wipe MTT scratch and rebuild everything
 #   --verbose          Show MTT output on console
+#   --submit           Submit results to mtt.open-mpi.org (IUDatabase)
+#   --mtt-user USER    MTT database username (or $MTT_USER)
+#   --mtt-pass PASS    MTT database password (or $MTT_PASS)
+#   --platform NAME    Platform name in the DB (default: uname -m)
+#   --hostname NAME    Hostname sent to the DB (default: hostname)
 #   --help             Show this help message
 #
 # Exit codes:
@@ -22,7 +27,7 @@
 #   3  Configuration error
 #   4  Missing dependency
 #
-# Reports stay local in results/summary.txt. Nothing is submitted upstream.
+# Reports stay local in results/summary.txt unless --submit is used.
 
 set -euo pipefail
 
@@ -50,6 +55,11 @@ parse_args() {
             --mtt-home)  MTT_HOME="${2:?--mtt-home requires a value}"; shift 2 ;;
             --clean)     DO_CLEAN=true; shift ;;
             --verbose)   VERBOSE=true; shift ;;
+            --submit)    DO_SUBMIT=true; shift ;;
+            --mtt-user)  MTT_USER="${2:?--mtt-user requires a value}"; shift 2 ;;
+            --mtt-pass)  MTT_PASS="${2:?--mtt-pass requires a value}"; shift 2 ;;
+            --platform)  PLATFORM="${2:?--platform requires a value}"; shift 2 ;;
+            --hostname)  SUBMIT_HOSTNAME="${2:?--hostname requires a value}"; shift 2 ;;
             --help|-h)   usage ;;
             *)           die ${EXIT_CONFIG_ERROR} "Unknown option: $1" ;;
         esac
@@ -61,6 +71,14 @@ main() {
     run_start=$(date +%s)
 
     parse_args "$@"
+
+    if [[ "${DO_SUBMIT}" == "true" ]]; then
+        if [[ -z "${MTT_USER}" || -z "${MTT_PASS}" ]]; then
+            echo "ERROR: --submit requires --mtt-user and --mtt-pass (or MTT_USER / MTT_PASS)" >&2
+            exit ${EXIT_CONFIG_ERROR}
+        fi
+    fi
+
     ensure_dirs
     log_init
 

@@ -23,6 +23,7 @@ reuse the cached build via MTT's `ASIS` sections.
 | `smoke` | Five small MPI programs (hello, version, init, comm, bcast) |
 | `ompi` | Open MPI `make check` |
 | `mpich` | MPICH conformance tests against this OMPI build |
+| `intel` | Intel MPI tests from private `open-mpi/ompi-tests` |
 | `all` | All of the above |
 
 ```bash
@@ -37,7 +38,7 @@ reuse the cached build via MTT's `ASIS` sections.
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--suite SUITE` | `smoke`, `ompi`, `mpich`, `all` | `smoke` |
+| `--suite SUITE` | `smoke`, `ompi`, `mpich`, `intel`, `all` | `smoke` |
 | `--branch BRANCH` | Open MPI branch or tag | `v5.0.x` |
 | `--np N` | MPI process count | `2` |
 | `--jobs N` | Parallel make jobs | `nproc` |
@@ -45,10 +46,15 @@ reuse the cached build via MTT's `ASIS` sections.
 | `--mtt-home DIR` | Path to MTT clone | `~/src/mtt` |
 | `--clean` | Wipe scratch and rebuild | |
 | `--verbose` | Show full MTT output | |
+| `--submit` | Submit to [mtt.open-mpi.org](https://mtt.open-mpi.org/) | off |
+| `--mtt-user USER` | MTT DB username (or `$MTT_USER`) | |
+| `--mtt-pass PASS` | MTT DB password (or `$MTT_PASS`) | |
+| `--platform NAME` | Platform name in the DB | `uname -m` |
+| `--hostname NAME` | Hostname sent to the DB | `hostname` |
 
 ## Reports
 
-All output stays on disk:
+Every run writes a local text report. Upstream submit is opt-in.
 
 | File | Content |
 |------|---------|
@@ -56,7 +62,19 @@ All output stays on disk:
 | `results/logs/mtt.log` | Full `pymtt.py` output |
 | `results/logs/mtt-runner-*.log` | Wrapper log |
 
-There is no IUDatabase reporter and no `--submit` flag.
+```bash
+# Local only (default)
+./run-mtt.sh --suite smoke
+
+# Also submit to the MTT database
+export MTT_USER=ibm
+export MTT_PASS=...
+./run-mtt.sh --suite smoke --submit --platform ppc64le --hostname ltczz10
+```
+
+`--submit` adds MTT's `IUDatabase` reporter (same shape as
+[mtt#956](https://github.com/open-mpi/mtt/issues/956)) and sets `trial = false`
+so results are not hidden as trial runs. `hostname` is sent as a plain string.
 
 ## How it works
 

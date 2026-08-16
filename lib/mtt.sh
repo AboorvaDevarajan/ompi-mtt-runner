@@ -11,8 +11,9 @@ generate_mtt_ini() {
         smoke) append_suite smoke "${output}" ;;
         ompi)  append_suite ompi  "${output}" ;;
         mpich) append_suite mpich "${output}" ;;
+        intel) append_suite intel "${output}" ;;
         all)
-            for s in smoke ompi mpich; do
+            for s in smoke ompi mpich intel; do
                 append_suite "${s}" "${output}"
             done
             ;;
@@ -29,18 +30,31 @@ generate_mtt_ini() {
 
 expand_template() {
     local template="$1"
+    local trial="true"
+    if [[ "${DO_SUBMIT}" == "true" ]]; then
+        trial="false"
+    fi
     sed \
         -e "s|@SCRATCH@|${SCRATCH_DIR}|g" \
         -e "s|@NP@|${NP}|g" \
         -e "s|@JOBS@|${JOBS}|g" \
         -e "s|@BRANCH@|${BRANCH}|g" \
-        -e "s|@HOSTNAME@|$(hostname)|g" \
+        -e "s|@HOSTNAME@|${SUBMIT_HOSTNAME}|g" \
         -e "s|@RESULTS_DIR@|${RESULTS_DIR}|g" \
         -e "s|@TESTS_DIR@|${TESTS_DIR}|g" \
         -e "s|@HOSTFILE@|${HOSTFILE}|g" \
+        -e "s|@MTT_USER@|${MTT_USER}|g" \
+        -e "s|@MTT_PASS@|${MTT_PASS}|g" \
+        -e "s|@PLATFORM@|${PLATFORM}|g" \
+        -e "s|@TRIAL@|${trial}|g" \
         "${template}" \
     | if [[ -z "${HOSTFILE}" ]]; then
         grep -v '^hostfile[[:space:]]*=[[:space:]]*$'
+      else
+        cat
+      fi \
+    | if [[ "${DO_SUBMIT}" != "true" ]]; then
+        sed '/^\[Reporter:IUDatabase\]/,/^$/d'
       else
         cat
       fi
