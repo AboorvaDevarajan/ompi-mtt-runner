@@ -22,7 +22,7 @@ reuse the cached build via MTT's `ASIS` sections.
 |-------|----------------|
 | `smoke` | Five small MPI programs (hello, version, init, comm, bcast) |
 | `ompi` | Open MPI `make check` |
-| `mpich` | MPICH conformance tests against this OMPI build |
+| `mpich` | MPICH C tests: pt2pt, coll, comm, datatype, init, attr, group, info, errhan, topo, rma, session, mpi_t, part |
 | `intel` | Intel MPI tests from private `open-mpi/ompi-tests` |
 | `all` | All of the above |
 
