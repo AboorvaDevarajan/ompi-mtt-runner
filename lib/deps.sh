@@ -42,17 +42,25 @@ check_system_deps() {
 ensure_mtt() {
     if [[ -d "${MTT_HOME}" && -f "${MTT_HOME}/pyclient/pymtt.py" ]]; then
         log_raw "MTT found at ${MTT_HOME}"
-        return 0
+    else
+        log_verbose "Cloning MTT into ${MTT_HOME}..."
+        local clone_log="${LOGS_DIR}/mtt-clone.log"
+        mkdir -p "$(dirname "${MTT_HOME}")"
+        if ! git clone "${MTT_GIT_URL}" "${MTT_HOME}" >> "${clone_log}" 2>&1; then
+            log_raw "MTT clone failed. See ${clone_log}"
+            return 1
+        fi
+        log_raw "MTT cloned to ${MTT_HOME}"
     fi
 
-    log_verbose "Cloning MTT into ${MTT_HOME}..."
-    local clone_log="${LOGS_DIR}/mtt-clone.log"
-    mkdir -p "$(dirname "${MTT_HOME}")"
-    if ! git clone "${MTT_GIT_URL}" "${MTT_HOME}" >> "${clone_log}" 2>&1; then
-        log_raw "MTT clone failed. See ${clone_log}"
-        return 1
+    local patcher="${RUNNER_DIR}/scripts/patch-mtt.py"
+    if [[ -f "${patcher}" ]]; then
+        if ! python3 "${patcher}" "${MTT_HOME}" >> "${LOGS_DIR}/mtt-patch.log" 2>&1; then
+            log_raw "MTT patch failed. See ${LOGS_DIR}/mtt-patch.log"
+            return 1
+        fi
+        log_raw "MTT MPIVersion patches applied"
     fi
-    log_raw "MTT cloned to ${MTT_HOME}"
     return 0
 }
 
@@ -75,6 +83,7 @@ ensure_venv() {
     local py
     py=$(select_python) || {
         log_raw "MTT requires Python 3.10 or 3.11 (Yapsy is broken on 3.12+)"
+        log_raw "Ubuntu 24.04: sudo add-apt-repository ppa:deadsnakes/ppa && sudo apt install python3.11 python3.11-venv python3.11-dev"
         return 1
     }
 
