@@ -59,7 +59,7 @@ ensure_mtt() {
             log_raw "MTT patch failed. See ${LOGS_DIR}/mtt-patch.log"
             return 1
         fi
-        log_raw "MTT MPIVersion patches applied"
+        log_raw "MTT patches applied"
     fi
     return 0
 }

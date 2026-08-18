@@ -1,4 +1,4 @@
 #!/bin/sh
-# MPICH mtest binaries (pingping, sendrecv1, sendself) require -seed=.
-# MTT appends the test path as the last argument; pass -seed=0 through.
-exec mpirun --allow-run-as-root --oversubscribe "$@" -seed=0
+# MPICH DTP pt2pt tests require -seed= -testsize= -type= -sendcnt= -recvcnt=.
+exec mpirun --allow-run-as-root --oversubscribe "$@" \
+    -seed=0 -testsize=5 -type=MPI_INT -sendcnt=64 -recvcnt=64

@@ -4,6 +4,9 @@
 MPIVersion.py uses bare `mpiexec`, which refuses to run as root.
 Autotools also calls MPIVersion before mpicc exists. After a successful
 install (or ASIS reuse), probe again with prefix/bin on PATH.
+
+LauncherMTTTool walks into libtool .libs/ and then skip_tests only
+matches the last basename, so wrappers still run.
 """
 import sys
 from pathlib import Path
@@ -79,6 +82,70 @@ def patch_mpiversion(mtt_home: Path) -> bool:
     return True
 
 
+WALK_OLD = "for dirName, subdirList, fileList in os.walk(dr):"
+WALK_NEW = "for dirName, subdirList, fileList in self._walk_tests(dr):"
+WALK_DOT_OLD = 'for dirName, subdirList, fileList in os.walk("."):'
+WALK_DOT_NEW = 'for dirName, subdirList, fileList in self._walk_tests("."):'
+
+WALK_HELPER = '''
+    def _walk_tests(self, root):
+        """Skip libtool .libs copies so each test is collected once."""
+        skip_dirs = {".libs", ".deps", "autom4te.cache"}
+        for dirName, subdirList, fileList in os.walk(root):
+            subdirList[:] = [s for s in subdirList if s not in skip_dirs]
+            yield dirName, subdirList, fileList
+
+'''
+
+SKIP_OLD = """        for i,t in enumerate(self.skip_tests):
+            for t2 in self.tests:
+                if t2.split("/")[-1] == t:
+                    self.skip_tests[i] = t2
+        # all done
+        return 0
+"""
+
+SKIP_NEW = """        resolved = []
+        for t in self.skip_tests:
+            if not t:
+                continue
+            matched = False
+            for t2 in self.tests:
+                if t2.split("/")[-1] == t:
+                    resolved.append(t2)
+                    matched = True
+            if not matched:
+                resolved.append(t)
+        self.skip_tests = resolved
+        # all done
+        return 0
+"""
+
+
+def patch_launcher(mtt_home: Path) -> bool:
+    path = mtt_home / "pylib" / "Tools" / "Launcher" / "LauncherMTTTool.py"
+    text = path.read_text()
+    changed = False
+    if "def _walk_tests(self, root):" not in text:
+        needle = "    def collectTests(self, log, cmds):"
+        if needle not in text:
+            raise SystemExit(f"LauncherMTTTool.py: collectTests not found in {path}")
+        text = text.replace(needle, WALK_HELPER + needle, 1)
+        changed = True
+    if WALK_OLD in text:
+        text = text.replace(WALK_OLD, WALK_NEW)
+        changed = True
+    if WALK_DOT_OLD in text:
+        text = text.replace(WALK_DOT_OLD, WALK_DOT_NEW)
+        changed = True
+    if SKIP_OLD in text:
+        text = text.replace(SKIP_OLD, SKIP_NEW, 1)
+        changed = True
+    if changed:
+        path.write_text(text)
+    return changed
+
+
 def patch_autotools(mtt_home: Path) -> bool:
     path = mtt_home / "pylib" / "Tools" / "Build" / "Autotools.py"
     text = path.read_text()
@@ -108,8 +175,10 @@ def main() -> None:
         raise SystemExit(f"not an MTT tree: {mtt_home}")
     a = patch_mpiversion(mtt_home)
     b = patch_autotools(mtt_home)
+    c = patch_launcher(mtt_home)
     print("patched MPIVersion.py" if a else "MPIVersion.py already patched")
     print("patched Autotools.py" if b else "Autotools.py already patched")
+    print("patched LauncherMTTTool.py" if c else "LauncherMTTTool.py already patched")
 
 
 if __name__ == "__main__":
