@@ -5,11 +5,12 @@
 #   ./run-mtt.sh [OPTIONS]
 #
 # Options:
-#   --suite SUITE      Test suite: smoke, ompi, mpich, intel, all (default: smoke)
+#   --suite SUITE      Test suite: smoke, ompi, mpich, intel, ibm, all (default: smoke)
 #   --branch BRANCH    Open MPI branch to test (default: v5.0.x)
-#   --np N             Number of MPI processes (default: 2)
+#   --np N             Number of MPI processes (default: 2; nproc for --suite ibm)
 #   --jobs N           Parallel make jobs (default: nproc)
 #   --hostfile FILE    MPI hostfile for multi-node runs
+#   --ibm-src DIR      Local IBM test tree (or $IBM_TEST_SRC / $ibm_test_src)
 #   --mtt-home DIR     Path to MTT clone (default: ~/src/mtt)
 #   --clean            Wipe MTT scratch and rebuild everything
 #   --verbose          Show MTT output on console
@@ -49,9 +50,10 @@ parse_args() {
         case "$1" in
             --suite)     SUITE="${2:?--suite requires a value}"; shift 2 ;;
             --branch)    BRANCH="${2:?--branch requires a value}"; shift 2 ;;
-            --np)        NP="${2:?--np requires a value}"; shift 2 ;;
+            --np)        NP="${2:?--np requires a value}"; NP_EXPLICIT=true; shift 2 ;;
             --jobs)      JOBS="${2:?--jobs requires a value}"; shift 2 ;;
             --hostfile)  HOSTFILE="${2:?--hostfile requires a value}"; shift 2 ;;
+            --ibm-src)   IBM_TEST_SRC="${2:?--ibm-src requires a value}"; shift 2 ;;
             --mtt-home)  MTT_HOME="${2:?--mtt-home requires a value}"; shift 2 ;;
             --clean)     DO_CLEAN=true; shift ;;
             --verbose)   VERBOSE=true; shift ;;
@@ -79,11 +81,33 @@ main() {
         fi
     fi
 
+    if [[ "${SUITE}" == "ibm" ]]; then
+        if [[ "${NP_EXPLICIT}" != "true" ]]; then
+            NP="$(nproc 2>/dev/null || echo "${DEFAULT_NP}")"
+        fi
+        if [[ -z "${IBM_TEST_SRC}" ]]; then
+            echo "ERROR: --suite ibm requires --ibm-src DIR (or IBM_TEST_SRC / ibm_test_src)" >&2
+            exit ${EXIT_CONFIG_ERROR}
+        fi
+        if [[ ! -d "${IBM_TEST_SRC}" ]]; then
+            echo "ERROR: IBM test source is not a directory: ${IBM_TEST_SRC}" >&2
+            exit ${EXIT_CONFIG_ERROR}
+        fi
+        if [[ ! -f "${IBM_TEST_SRC}/autogen.sh" && ! -d "${IBM_TEST_SRC}/collective" ]]; then
+            echo "ERROR: ${IBM_TEST_SRC} does not look like the IBM test tree (need autogen.sh or collective/)" >&2
+            exit ${EXIT_CONFIG_ERROR}
+        fi
+        IBM_TEST_SRC="$(cd "${IBM_TEST_SRC}" && pwd)"
+    fi
+
     ensure_dirs
     log_init
 
     log_raw "Suite=${SUITE} Branch=${BRANCH} NP=${NP} Jobs=${JOBS}"
     log_raw "MTT_HOME=${MTT_HOME}"
+    if [[ "${SUITE}" == "ibm" ]]; then
+        log_raw "IBM_TEST_SRC=${IBM_TEST_SRC}"
+    fi
 
     step_start "Checking system dependencies"
     if check_system_deps; then

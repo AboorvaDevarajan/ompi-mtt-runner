@@ -12,6 +12,7 @@ generate_mtt_ini() {
         ompi)  append_suite ompi  "${output}" ;;
         mpich) append_suite mpich "${output}" ;;
         intel) append_suite intel "${output}" ;;
+        ibm)   append_suite ibm   "${output}" ;;
         all)
             for s in smoke ompi mpich intel; do
                 append_suite "${s}" "${output}"
@@ -47,6 +48,7 @@ expand_template() {
         -e "s|@MTT_PASS@|${MTT_PASS}|g" \
         -e "s|@PLATFORM@|${PLATFORM}|g" \
         -e "s|@TRIAL@|${trial}|g" \
+        -e "s|@IBM_TEST_SRC@|${IBM_TEST_SRC}|g" \
         "${template}" \
     | if [[ -z "${HOSTFILE}" ]]; then
         grep -v '^hostfile[[:space:]]*=[[:space:]]*$'

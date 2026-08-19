@@ -37,10 +37,13 @@ HOSTFILE=""
 DO_CLEAN=false
 VERBOSE=false
 DO_SUBMIT=false
+NP_EXPLICIT=false
 MTT_USER="${MTT_USER:-}"
 MTT_PASS="${MTT_PASS:-}"
 PLATFORM="$(uname -m)"
 SUBMIT_HOSTNAME="$(hostname)"
+# Local IBM test tree. Perl MTT used getenv("ibm_test_src").
+IBM_TEST_SRC="${IBM_TEST_SRC:-${ibm_test_src:-}}"
 
 ensure_dirs() {
     mkdir -p "${RESULTS_DIR}" "${LOGS_DIR}" "${WORK_DIR}" "${SCRATCH_DIR}"
